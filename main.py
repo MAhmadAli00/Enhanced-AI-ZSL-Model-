@@ -29,7 +29,8 @@ def main():
     parser.add_argument('--method', type=str, default='kmeans', choices=['kmeans', 'gmm', 'agglomerative'], help='Clustering method')
     parser.add_argument('--n_clusters', type=int, default=1, help='Prototypes per class')
     parser.add_argument('--eda', action='store_true', help='Run Exploratory Data Analysis (EDA) and save plots')
-    
+    parser.add_argument('--multi_seed', action='store_true', help='Run multi-seed ZSL variance evaluation (5 seeds, report mean±std)')
+
     args = parser.parse_args()
     
     # 0. Run EDA if requested
@@ -81,7 +82,13 @@ def main():
     print("Model saved to malware_embedding_model.h5")
     
     # 5. Evaluation (ZSL/Few-Shot on Unseen)
-    evaluate_on_unseen(embedding_model, X_unseen, y_unseen, n_support=5, n_clusters=args.n_clusters, method=args.method)
-    
+    if args.multi_seed:
+        from src.run_multi_seed import run as run_multi_seed
+        run_multi_seed(args.data_path, args.unseen_classes, args.epochs,
+                       n_support=5, method=args.method, n_clusters=args.n_clusters)
+    else:
+        evaluate_on_unseen(embedding_model, X_unseen, y_unseen, n_support=5,
+                           n_clusters=args.n_clusters, method=args.method, seed=42)
+
 if __name__ == "__main__":
     main()
